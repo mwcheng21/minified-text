@@ -34,7 +34,6 @@ class Huffman:
                 self.codec = HuffmanCodec.from_frequencies(dictionary)
         else:
             self.codec = load_shakespeare()
-
     def _add_padding(self, msg: Bits, padding_len: int) -> Bits:
 
         padding_bits = '{0:b}'.format(0).zfill(padding_len) if padding_len > 0 else ''
@@ -52,7 +51,7 @@ class Huffman:
     def encode(
             self,
             msg: str,
-            padding_len: int = 5
+            padding_len: int = 0
     ) -> Bits:
         bytes = self.codec.encode(msg)
         bits = Bits(bytes=bytes)
@@ -63,7 +62,7 @@ class Huffman:
     def decode(
             self,
             bits: Bits,
-            padding_len: int = 5
+            padding_len: int = 0
     ) -> str:
         bits = self._remove_padding(bits, padding_len)
         decoded = self.codec.decode(bits.tobytes())
@@ -78,6 +77,7 @@ def test_huffman_codec():
     cases = ['group 3', 'magic code']
 
     huffman = Huffman()
+
     for tc in cases:
         orig = tc
         encoded = huffman.encode(orig)
@@ -206,5 +206,45 @@ def minify_list():
     print(word2abrev["name"])
     return abrev2word
 
-mini = minify_list()
-get_bit_chunk_freq(mini.keys())
+# mini = minify_list()
+# get_bit_chunk_freq(mini.keys())
+
+def minify_frequency_list():
+    with open('frequency.txt', 'r') as f:
+        words = f.read().splitlines()
+    random.seed(1)
+    abrev2word = {}
+    words_seen = set()
+
+    words = [word for word in words if words.count(word) == 1]
+    for i, word in enumerate(words):
+
+        if word in words_seen:
+            continue
+
+        words_seen.add(word)
+
+        modified_word = word
+
+        while modified_word not in abrev2word and modified_word not in words[i+1:]:
+            actual_modified_word = modified_word
+            # remove random letter from word
+            if len(modified_word) <= 1:
+                break
+            index = random.randint(1, len(modified_word)-1)
+
+            modified_word = modified_word[:index] + modified_word[index+1:]
+
+        abrev2word[actual_modified_word] = word
+    print("average word length")
+    print(f"before {sum([len(word) for word in abrev2word.values()])/len(abrev2word.values())}")
+    print(f"after {sum([len(word) for word in abrev2word.keys()])/len(abrev2word.keys())}")
+
+    word2abrev = {val:key for key, val in abrev2word.items()}
+
+    with open('minifiedFrequencies.txt', 'w') as f:
+        for key, val in abrev2word.items():
+            f.write(f"{key} {val}\n")    
+minify_frequency_list()
+
+# print(Huffman().codec.print_code_table())
